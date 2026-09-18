@@ -1,0 +1,43 @@
+# NOTE ON PLAN / DATA PERSISTENCE:
+# Render's Free web service tier does NOT support persistent disks — its
+# filesystem resets on every restart/redeploy, which would silently wipe the
+# SQLite database. The "starter" plan below (~$7/mo at time of writing —
+# verify current pricing at render.com/pricing) is required to attach the
+# disk and keep data. If you want to stay on the free tier instead, switch
+# `plan: starter` to `plan: free`, remove the `disk:` block, and swap
+# DATABASE_PATH below to a Render free PostgreSQL instance instead of SQLite
+# (free Postgres on Render expires after 30 days, so it's fine for testing
+# but not for a real launch).
+services:
+  - type: web
+    name: archive-backend
+    runtime: node
+    plan: starter
+    buildCommand: npm install && npm run migrate
+    startCommand: npm start
+    healthCheckPath: /health
+    disk:
+      name: archive-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_PATH
+        value: /var/data/archive.sqlite
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: GOOGLE_DRIVE_ROOT_FOLDER_ID
+        sync: false
+      - key: EUROPEANA_API_KEY
+        sync: false
+      - key: GETTY_API_BASE
+        value: https://data.getty.edu/museum/collection
+      - key: WIKIDATA_SPARQL_ENDPOINT
+        value: https://query.wikidata.org/sparql
+      - key: WIKIMEDIA_COMMONS_API
+        value: https://commons.wikimedia.org/w/api.php
